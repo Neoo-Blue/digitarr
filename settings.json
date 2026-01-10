@@ -1,0 +1,29 @@
+{
+  "tmdb": {
+    "api_key": ""
+  },
+  "overseerr": {
+    "api_url": "",
+    "api_key": ""
+  },
+  "riven": {
+    "api_url": "",
+    "api_key": ""
+  },
+  "filters": {
+    "min_tmdb_rating": 6.0,
+    "exclude_adult": true,
+    "allowed_languages": [],
+    "excluded_genres": [],
+    "excluded_certifications": []
+  },
+  "run_time": "",
+  "request_delay_minutes": 0,
+  "logging": {
+    "level": "INFO"
+  },
+  "discord": {
+    "webhook_url": ""
+  }
+}
+

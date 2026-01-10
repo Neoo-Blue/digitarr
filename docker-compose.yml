@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  digitarr:
+    image: arrrrrr/digitarr:latest
+    container_name: digitarr
+    restart: unless-stopped
+    environment:
+      # =================================================================
+      # TMDB Configuration (Required)
+      # Get your API key from: https://www.themoviedb.org/settings/api
+      # =================================================================
+      - TMDB_API_KEY=your_tmdb_api_key_here
+
+      # =================================================================
+      # Overseerr Configuration (Optional - leave empty to disable)
+      # Just adds to request list, no Radarr/Sonarr needed
+      # =================================================================
+      - OVERSEERR_API_URL=
+      - OVERSEERR_API_KEY=
+
+      # =================================================================
+      # Riven Configuration (Optional - leave empty to disable)
+      # =================================================================
+      - RIVEN_API_URL=
+      - RIVEN_API_KEY=
+
+      # =================================================================
+      # Filter Configuration
+      # =================================================================
+      - FILTERS_MIN_TMDB_RATING=6.0
+      - FILTERS_EXCLUDE_ADULT=true
+      # Comma-separated language codes (e.g., "en,es,fr"). Empty = all languages
+      - FILTERS_ALLOWED_LANGUAGES=en
+      # Comma-separated genres to exclude (e.g., "Horror,Documentary")
+      - FILTERS_EXCLUDED_GENRES=
+      # Comma-separated certifications to exclude (e.g., "R,NC-17")
+      - FILTERS_EXCLUDED_CERTIFICATIONS=
+
+      # =================================================================
+      # Schedule Configuration
+      # =================================================================
+      # Time to run daily (24h format, e.g., "19:00" or "01:00")
+      # Leave empty to run once and exit
+      - RUN_TIME=19:00
+      # Minutes to wait after detecting releases before sending requests
+      - REQUEST_DELAY_MINUTES=0
+
+      # =================================================================
+      # Discord Notification (Optional - leave empty to disable)
+      # =================================================================
+      - DISCORD_WEBHOOK_URL=
+
+      # =================================================================
+      # Logging & Timezone
+      # =================================================================
+      - LOGGING_LEVEL=INFO
+      - TZ=UTC
+    volumes:
+      - ./logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

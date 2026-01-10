@@ -1,0 +1,28 @@
+{
+  "tmdb": {
+    "api_key": "your_tmdb_api_key_here"
+  },
+  "overseerr": {
+    "api_url": "http://localhost:5055",
+    "api_key": ""
+  },
+  "riven": {
+    "api_url": "http://localhost:8083",
+    "api_key": ""
+  },
+  "filters": {
+    "min_tmdb_rating": 6.0,
+    "exclude_adult": true,
+    "allowed_languages": [],
+    "excluded_genres": [],
+    "excluded_certifications": []
+  },
+  "run_time": "",
+  "request_delay_minutes": 0,
+  "logging": {
+    "level": "INFO"
+  },
+  "discord": {
+    "webhook_url": ""
+  }
+}
