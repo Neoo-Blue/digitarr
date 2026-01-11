@@ -199,6 +199,7 @@ When enabled, Digitarr sends individual Discord notifications for each movie add
 ### Riven
 - Adds movies directly via API
 - Uses `POST /api/v1/items/add` endpoint
+- **Auto Re-request**: If a movie already exists in Riven (any state), it will be automatically removed and re-added to trigger a fresh scrape attempt
 
 ## 🚀 Usage Modes
 
