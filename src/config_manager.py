@@ -36,6 +36,7 @@ class ConfigManager:
             "excluded_genres": [],  # genres to exclude (e.g., ["Horror", "Documentary"])
             "excluded_certifications": []  # age ratings to exclude (e.g., ["R", "NC-17"])
         },
+        "release_source": "tmdb",  # "tmdb" or "dvdsreleasedates"
         "run_time": "",  # Time to run daily (e.g., "19:00"), empty = run once
         "request_delay_minutes": 0,  # Minutes to wait after detection before sending requests
         "logging": {
@@ -161,6 +162,7 @@ class ConfigManager:
 
         # Top-level config mappings (key, type)
         top_level_map = {
+            "RELEASE_SOURCE": ("release_source", "str"),
             "RUN_TIME": ("run_time", "str"),
             "REQUEST_DELAY_MINUTES": ("request_delay_minutes", "int"),
         }

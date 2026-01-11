@@ -26,6 +26,13 @@ services:
       - RIVEN_API_KEY=
 
       # =================================================================
+      # Release Source Configuration
+      # Options: "tmdb" or "dvdsreleasedates"
+      # dvdsreleasedates.com may have more accurate digital release dates
+      # =================================================================
+      - RELEASE_SOURCE=tmdb
+
+      # =================================================================
       # Filter Configuration
       # =================================================================
       - FILTERS_MIN_TMDB_RATING=6.0
@@ -34,7 +41,7 @@ services:
       - FILTERS_ALLOWED_LANGUAGES=en
       # Comma-separated genres to exclude (e.g., "Horror,Documentary")
       - FILTERS_EXCLUDED_GENRES=
-      # Comma-separated certifications to exclude (e.g., "R,NC-17")
+      # Comma-separated MPAA ratings to exclude (e.g., "R,NC-17,PG-13")
       - FILTERS_EXCLUDED_CERTIFICATIONS=
 
       # =================================================================

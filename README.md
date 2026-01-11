@@ -1,13 +1,14 @@
 # Digitarr - Daily Digital Movie Release Checker
 
-A dockerized tool that checks for **daily digital movie releases** from TMDB and automatically requests them through **Overseerr** or **Riven** with intelligent filtering and Discord notifications.
+A dockerized tool that checks for **daily digital movie releases** and automatically requests them through **Overseerr** or **Riven** with intelligent filtering and Discord notifications.
 
 ## 🎬 Features
 
-- 🎬 **Digital Release Detection**: Checks TMDB for movies with digital releases today (not theatrical)
+- 🎬 **Digital Release Detection**: Checks for movies with digital releases today (not theatrical)
+- 📡 **Multiple Release Sources**: Use TMDB or dvdsreleasedates.com for release dates
 - 🎯 **Multi-Service Support**: Request through Overseerr and/or Riven simultaneously
 - 🔔 **Discord Notifications**: Get notified for each movie added with poster and rating
-- 🎥 **Smart Filtering**: Filter by TMDB rating, language, genre, age rating (certification), and adult content
+- 🎥 **Smart Filtering**: Filter by TMDB rating, language, genre, MPAA rating, and adult content
 - 🐳 **Docker Native**: Complete Docker and Docker Compose setup
 - ⚙️ **Fully Configurable**: JSON-based settings + complete environment variable support
 - 📅 **Daily Scheduling**: Run at a specific time daily with optional request delay
@@ -53,8 +54,16 @@ Configure via environment variables (Docker) or `settings.json`.
 | RIVEN_API_URL | Riven URL | `http://riven:8080` |
 | RIVEN_API_KEY | Riven API key | `your_riven_key` |
 | DISCORD_WEBHOOK_URL | Discord webhook for notifications | `https://discord.com/api/webhooks/...` |
+| RELEASE_SOURCE | Where to get release dates: `tmdb` or `dvdsreleasedates` | `tmdb` |
 | RUN_TIME | Time to run daily (24h format) | `19:00` |
 | REQUEST_DELAY_MINUTES | Minutes to wait before requests | `0` |
+
+#### Release Source Options
+
+| Source | Description |
+|--------|-------------|
+| `tmdb` | Uses TMDB's digital release dates (default) |
+| `dvdsreleasedates` | Scrapes [dvdsreleasedates.com](https://www.dvdsreleasedates.com/digital-releases/) for more accurate US digital release dates, then looks up movie details on TMDB |
 
 ### Filter Configuration
 

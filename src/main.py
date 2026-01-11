@@ -9,6 +9,7 @@ from datetime import datetime
 
 from config_manager import ConfigManager
 from release_checker import ReleaseChecker
+from dvd_release_checker import DVDReleaseChecker
 from overseerr_requester import OverseerrRequester
 from riven_requester import RivenRequester
 from filters import FilterEngine
@@ -134,8 +135,25 @@ def main():
         if not config.get("tmdb", {}).get("api_key"):
             raise ValueError("TMDB API key is required")
 
+        # Initialize release checker based on source
+        release_source = config.get("release_source", "tmdb").lower()
+        tmdb_api_key = config.get("tmdb", {}).get("api_key")
+
+        if release_source == "dvdsreleasedates":
+            logger.info("Using dvdsreleasedates.com as release source")
+            dvd_checker = DVDReleaseChecker(tmdb_api_key)
+            # Wrap in a simple adapter that matches the ReleaseChecker interface
+            class DVDReleaseAdapter:
+                def __init__(self, checker):
+                    self.checker = checker
+                def get_today_releases(self):
+                    return self.checker.get_todays_digital_releases()
+            release_checker = DVDReleaseAdapter(dvd_checker)
+        else:
+            logger.info("Using TMDB as release source")
+            release_checker = ReleaseChecker(config)
+
         # Initialize components
-        release_checker = ReleaseChecker(config)
         overseerr_requester = OverseerrRequester(config) if overseerr_enabled else None
         riven_requester = RivenRequester(config) if riven_enabled else None
         filter_engine = FilterEngine(config)
