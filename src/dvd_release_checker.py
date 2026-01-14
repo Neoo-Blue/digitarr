@@ -158,7 +158,7 @@ class DVDReleaseChecker:
             genre_names = [g['name'] for g in details.get('genres', [])]
             
             return {
-                'id': movie['id'],
+                'tmdb_id': movie['id'],
                 'title': movie.get('title', title),
                 'overview': movie.get('overview', ''),
                 'vote_average': movie.get('vote_average', 0),
@@ -168,7 +168,8 @@ class DVDReleaseChecker:
                 'adult': movie.get('adult', False),
                 'genre_names': genre_names,
                 'certification': certification,
-                'media_type': 'movie'
+                'media_type': 'movie',
+                'type': 'movie'
             }
             
         except requests.RequestException as e:
