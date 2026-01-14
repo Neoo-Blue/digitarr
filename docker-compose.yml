@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   digitarr:
     image: arrrrrr/digitarr:latest
