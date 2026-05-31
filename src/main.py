@@ -5,7 +5,7 @@ Supports: Overseerr, Riven
 
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from config_manager import ConfigManager
 from release_checker import ReleaseChecker
@@ -182,7 +182,7 @@ def main():
 
                 # If we've passed today's run time, schedule for tomorrow
                 if next_run <= now:
-                    next_run = next_run.replace(day=now.day + 1)
+                    next_run += timedelta(days=1)
 
                 sleep_seconds = (next_run - now).total_seconds()
                 logger.info(f"Next run at {next_run.strftime('%Y-%m-%d %H:%M:%S')} (in {sleep_seconds/3600:.1f} hours)")

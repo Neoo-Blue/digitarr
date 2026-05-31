@@ -30,6 +30,7 @@ class ReleaseChecker:
 
     def get_today_releases(self) -> List[Dict[str, Any]]:
         """Get digital movie releases for today"""
+        self.today = datetime.now().date()
         releases = []
 
         if not self.tmdb_api_key:

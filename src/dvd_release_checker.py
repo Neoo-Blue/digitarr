@@ -166,6 +166,7 @@ class DVDReleaseChecker:
                 'release_date': movie.get('release_date', ''),
                 'original_language': movie.get('original_language', ''),
                 'adult': movie.get('adult', False),
+                'genres': genre_names,
                 'genre_names': genre_names,
                 'certification': certification,
                 'media_type': 'movie',

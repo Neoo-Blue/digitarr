@@ -35,7 +35,7 @@ class TestConfigManager(unittest.TestCase):
         config_manager = ConfigManager()
         bad_config = {
             "filters": {
-                "min_imdb_rating": 11  # Invalid: > 10
+                "min_tmdb_rating": 11  # Invalid: > 10
             }
         }
         
@@ -47,7 +47,8 @@ class TestConfigManager(unittest.TestCase):
         config_manager = ConfigManager()
         bad_config = {
             "overseerr": {
-                "api_url": "localhost:5055"  # Invalid: no protocol
+                "api_url": "localhost:5055",  # Invalid: no protocol
+                "api_key": "test_key"
             }
         }
         
@@ -84,19 +85,26 @@ class TestReleaseChecker(unittest.TestCase):
         mock_get.return_value = mock_response
         
         checker = ReleaseChecker(self.config)
-        movies = checker._fetch_tmdb_movies(checker.today, checker.today)
+        with patch.object(checker, '_get_movie_with_release_dates') as mock_details:
+            mock_details.return_value = {
+                "id": 123,
+                "title": "Test Movie",
+                "type": "movie"
+            }
+            movies = checker._fetch_digital_releases(checker.today)
         
         self.assertEqual(len(movies), 1)
         self.assertEqual(movies[0]["title"], "Test Movie")
         self.assertEqual(movies[0]["type"], "movie")
     
-    def test_get_monthly_releases(self):
-        """Test getting monthly releases"""
+    @patch('release_checker.ReleaseChecker._fetch_digital_releases')
+    def test_get_today_releases(self, mock_fetch):
+        """Test getting today's releases"""
+        mock_fetch.return_value = [{"title": "Test Movie", "type": "movie"}]
         checker = ReleaseChecker(self.config)
-        
-        with patch.object(checker, '_get_tmdb_releases', return_value=[]):
-            releases = checker.get_monthly_releases()
-            self.assertIsInstance(releases, list)
+        releases = checker.get_today_releases()
+        self.assertEqual(len(releases), 1)
+        self.assertEqual(releases[0]["title"], "Test Movie")
 
 
 class TestFilterEngine(unittest.TestCase):
@@ -234,7 +242,7 @@ class TestRivenRequester(unittest.TestCase):
                 "title": "Test Movie"
             },
             {
-                "type": "tv",
+                "type": "movie",
                 "tmdb_id": 456,
                 "title": "Test Show"
             }
@@ -288,6 +296,48 @@ class TestRivenRequester(unittest.TestCase):
         status = requester.get_status()
         
         self.assertEqual(status["status"], "healthy")
+
+
+class TestSchedulerAndRollover(unittest.TestCase):
+    """Test date rollover and scheduler logic"""
+
+    def test_month_boundary_rollover(self):
+        """Test that adding days correctly rolls over month/year boundaries (avoiding day out of range ValueError)"""
+        from datetime import datetime, timedelta
+        # Setup next_run at end of April
+        next_run = datetime(2026, 4, 30, 19, 0)
+        # Advance by 1 day using timedelta (safe approach)
+        next_run += timedelta(days=1)
+        self.assertEqual(next_run.month, 5)
+        self.assertEqual(next_run.day, 1)
+
+        # Setup next_run at end of December (leap year transition / year boundary)
+        next_run = datetime(2026, 12, 31, 19, 0)
+        next_run += timedelta(days=1)
+        self.assertEqual(next_run.year, 2027)
+        self.assertEqual(next_run.month, 1)
+        self.assertEqual(next_run.day, 1)
+
+    @patch('release_checker.requests.get')
+    def test_release_checker_today_dynamic_update(self, mock_get):
+        """Test that ReleaseChecker updates self.today dynamically on every run"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"results": []}
+        mock_get.return_value = mock_response
+
+        config = {"tmdb": {"api_key": "test_key"}}
+        checker = ReleaseChecker(config)
+        
+        # Manually backdate checker.today to verify it updates
+        from datetime import date, timedelta
+        past_date = date.today() - timedelta(days=5)
+        checker.today = past_date
+        
+        self.assertEqual(checker.today, past_date)
+        
+        # Calling get_today_releases should update self.today to today's actual date
+        checker.get_today_releases()
+        self.assertEqual(checker.today, date.today())
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application
 COPY src/ ./src/
-COPY settings.json .
+COPY settings.example.json ./settings.json
 
 # Create a non-root user
 RUN useradd -m -u 1000 digitarr && chown -R digitarr:digitarr /app
