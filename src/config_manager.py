@@ -37,7 +37,10 @@ class ConfigManager:
             "excluded_genres": [],  # genres to exclude (e.g., ["Horror", "Documentary"])
             "excluded_certifications": []  # age ratings to exclude (e.g., ["R", "NC-17"])
         },
-        "release_source": "tmdb",  # "tmdb" or "dvdsreleasedates"
+        "release_source": "tmdb",  # "tmdb", "dvdsreleasedates", or "both"
+        "update_check": {
+            "repo": "Neoo-Blue/digitarr"  # GitHub repo to check for new releases
+        },
         "run_time": "",  # Time to run daily (e.g., "19:00"), empty = run once
         "request_delay_minutes": 0,  # Minutes to wait after detection before sending requests
         "logging": {
@@ -159,6 +162,7 @@ class ConfigManager:
             "FILTERS_ALLOWED_LANGUAGES": ("filters", "allowed_languages", "list"),
             "FILTERS_EXCLUDED_GENRES": ("filters", "excluded_genres", "list"),
             "FILTERS_EXCLUDED_CERTIFICATIONS": ("filters", "excluded_certifications", "list"),
+            "UPDATE_CHECK_REPO": ("update_check", "repo"),
             "LOGGING_LEVEL": ("logging", "level"),
         }
 

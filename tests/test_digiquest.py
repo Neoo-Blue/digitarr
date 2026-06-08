@@ -17,6 +17,7 @@ from filters import FilterEngine
 from overseerr_requester import OverseerrRequester
 from riven_requester import RivenRequester
 from combined_release_checker import CombinedReleaseChecker, DVDReleaseAdapter
+from version_checker import VersionChecker
 
 
 class TestConfigManager(unittest.TestCase):
@@ -164,6 +165,40 @@ class TestCombinedReleaseChecker(unittest.TestCase):
 
         adapter = DVDReleaseAdapter(_DVD())
         self.assertEqual(adapter.get_today_releases()[0]["title"], "Z")
+
+
+class TestVersionChecker(unittest.TestCase):
+    """Test VersionChecker comparison and update detection"""
+
+    def test_is_newer_semver(self):
+        self.assertTrue(VersionChecker._is_newer("1.2.0", "1.1.9"))
+        self.assertTrue(VersionChecker._is_newer("v2.0.0", "1.9.9"))
+        self.assertFalse(VersionChecker._is_newer("1.0.0", "1.0.0"))
+        self.assertFalse(VersionChecker._is_newer("1.0.0", "1.0.1"))
+        self.assertTrue(VersionChecker._is_newer("1.0.1", "1.0"))  # uneven lengths
+
+    @patch('version_checker.VersionChecker._get_latest_release')
+    def test_check_returns_update_when_newer(self, mock_latest):
+        mock_latest.return_value = {
+            "tag_name": "v1.5.0",
+            "html_url": "https://github.com/Neoo-Blue/digitarr/releases/tag/v1.5.0",
+            "body": "notes",
+        }
+        checker = VersionChecker("1.0.0")
+        update = checker.check()
+        self.assertIsNotNone(update)
+        self.assertEqual(update["version"], "v1.5.0")
+        self.assertIn("1.5.0", update["url"])
+
+    @patch('version_checker.VersionChecker._get_latest_release')
+    def test_check_returns_none_when_current(self, mock_latest):
+        mock_latest.return_value = {"tag_name": "1.0.0"}
+        self.assertIsNone(VersionChecker("1.0.0").check())
+
+    @patch('version_checker.VersionChecker._get_latest_release')
+    def test_check_returns_none_when_no_releases(self, mock_latest):
+        mock_latest.return_value = None
+        self.assertIsNone(VersionChecker("1.0.0").check())
 
 
 class TestFilterEngine(unittest.TestCase):
