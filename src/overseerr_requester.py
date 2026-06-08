@@ -22,20 +22,24 @@ class OverseerrRequester:
         if not self.api_key:
             raise ValueError("Overseerr API key is required")
 
-    def request_media(self, release: Dict[str, Any]) -> bool:
-        """Request media through Overseerr - adds to request list only"""
+    def request_media(self, release: Dict[str, Any]) -> str:
+        """Request media through Overseerr - adds to request list only.
+
+        Returns one of: "requested", "skipped", "failed".
+        "skipped" means the title was already on Overseerr (not an error).
+        """
         try:
             tmdb_id = release.get("tmdb_id")
             title = release.get("title", "Unknown")
 
             if not tmdb_id:
                 logger.warning(f"Cannot request {title} - no TMDB ID")
-                return False
+                return "failed"
 
             # Check if already requested or available
             if self._is_already_requested(tmdb_id):
                 logger.info(f"{title} already requested or available, skipping")
-                return False
+                return "skipped"
 
             # Make the request - minimal payload, just adds to request list
             endpoint = f"{self.api_url}/api/v1/request"
@@ -53,20 +57,20 @@ class OverseerrRequester:
 
             if response.status_code in [200, 201]:
                 logger.info(f"Successfully added {title} to Overseerr request list")
-                return True
+                return "requested"
             elif response.status_code == 409:
                 logger.info(f"{title} already exists in Overseerr")
-                return True
+                return "skipped"
             else:
                 logger.error(f"Error requesting {title}: {response.status_code} - {response.text}")
-                return False
+                return "failed"
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error requesting media: {str(e)}")
-            return False
+            return "failed"
         except Exception as e:
             logger.error(f"Error requesting media: {str(e)}")
-            return False
+            return "failed"
     
     def _is_already_requested(self, tmdb_id: int) -> bool:
         """Check if movie has already been requested or is available"""

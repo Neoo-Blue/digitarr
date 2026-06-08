@@ -3,6 +3,7 @@ Filter Engine - Applies configured filters to releases
 """
 
 import logging
+from datetime import date, datetime
 from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,13 @@ class FilterEngine:
         if self.filters.get("exclude_adult"):
             filtered = self._filter_adult(filtered)
             logger.info(f"After adult filter: {len(filtered)} releases")
+
+        # Drop catalog re-pickups: TMDB's digital release type also fires when a
+        # decades-old title lands on a new platform, which we don't want to request.
+        max_age_years = self.filters.get("max_release_age_years", 2)
+        if max_age_years and max_age_years > 0:
+            filtered = self._filter_by_max_release_age(filtered, max_age_years)
+            logger.info(f"After catalog age filter: {len(filtered)} releases")
 
         if self.filters.get("min_tmdb_rating", 0) > 0:
             filtered = self._filter_by_tmdb_rating(filtered)
@@ -53,6 +61,41 @@ class FilterEngine:
     def _filter_adult(self, releases: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Filter out adult content"""
         return [r for r in releases if not r.get("adult", False)]
+
+    def _filter_by_max_release_age(self, releases: List[Dict[str, Any]],
+                                    max_years: int) -> List[Dict[str, Any]]:
+        """Drop releases whose primary release date is more than max_years old.
+
+        Catches TMDB digital re-pickups of catalog titles (e.g. a 1984 film
+        landing on a new streaming platform shows up under release type 4
+        even though it isn't a new release.)
+        """
+        today = date.today()
+        filtered = []
+
+        for release in releases:
+            primary = release.get("primary_release_date") or release.get("release_date")
+            if not primary:
+                # No date info — keep it rather than drop a real release on missing metadata.
+                filtered.append(release)
+                continue
+
+            try:
+                primary_date = datetime.strptime(primary[:10], "%Y-%m-%d").date()
+            except ValueError:
+                filtered.append(release)
+                continue
+
+            age_days = (today - primary_date).days
+            if age_days > max_years * 365:
+                logger.debug(
+                    f"Skipping catalog re-pickup: {release.get('title')} "
+                    f"(primary release {primary_date}, age {age_days // 365}y)"
+                )
+                continue
+            filtered.append(release)
+
+        return filtered
 
     def _filter_by_tmdb_rating(self, releases: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Filter by TMDB rating"""

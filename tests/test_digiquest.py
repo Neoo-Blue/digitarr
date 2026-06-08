@@ -154,6 +154,31 @@ class TestFilterEngine(unittest.TestCase):
         self.assertEqual(len(filtered), 1)
         self.assertFalse(any(r.get("adult") for r in filtered))
     
+    def test_max_release_age_filter_drops_catalog_repickup(self):
+        """Catalog titles with old primary release dates are dropped."""
+        from datetime import date, timedelta
+        recent = (date.today() - timedelta(days=10)).isoformat()
+        old = (date.today() - timedelta(days=365 * 5)).isoformat()
+        config = {"filters": {"max_release_age_years": 2}}
+        releases = [
+            {"title": "Fresh", "primary_release_date": recent},
+            {"title": "Catalog Re-pickup", "primary_release_date": old},
+        ]
+
+        filter_engine = FilterEngine(config)
+        filtered = filter_engine._filter_by_max_release_age(releases, 2)
+
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0]["title"], "Fresh")
+
+    def test_max_release_age_filter_keeps_releases_without_date(self):
+        """Releases without a primary_release_date are kept (don't drop on missing metadata)."""
+        config = {"filters": {"max_release_age_years": 2}}
+        releases = [{"title": "Unknown Date"}]
+        filter_engine = FilterEngine(config)
+        filtered = filter_engine._filter_by_max_release_age(releases, 2)
+        self.assertEqual(len(filtered), 1)
+
     def test_tmdb_rating_filter(self):
         """Test TMDB rating filter"""
         self.config["filters"]["min_tmdb_rating"] = 7.0
@@ -202,25 +227,35 @@ class TestOverseerrRequester(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_post.return_value = mock_response
-        
+
         requester = OverseerrRequester(self.config)
         result = requester.request_media(self.release)
-        
-        self.assertTrue(result)
-    
+
+        self.assertEqual(result, "requested")
+
     @patch('overseerr_requester.requests.post')
     @patch('overseerr_requester.OverseerrRequester._is_already_requested')
-    def test_request_media_already_requested(self, mock_check, mock_post):
-        """Test request when media already exists"""
+    def test_request_media_conflict_is_skipped(self, mock_check, mock_post):
+        """Test 409 response is treated as skipped, not failed"""
         mock_check.return_value = False
         mock_response = MagicMock()
         mock_response.status_code = 409  # Conflict
         mock_post.return_value = mock_response
-        
+
         requester = OverseerrRequester(self.config)
         result = requester.request_media(self.release)
-        
-        self.assertTrue(result)
+
+        self.assertEqual(result, "skipped")
+
+    @patch('overseerr_requester.OverseerrRequester._is_already_requested')
+    def test_request_media_already_requested_is_skipped(self, mock_check):
+        """Test pre-check hit is treated as skipped, not failed"""
+        mock_check.return_value = True
+
+        requester = OverseerrRequester(self.config)
+        result = requester.request_media(self.release)
+
+        self.assertEqual(result, "skipped")
 
 
 class TestRivenRequester(unittest.TestCase):

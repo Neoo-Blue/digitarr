@@ -106,6 +106,7 @@ class ReleaseChecker:
                 "tmdb_id": movie.get("id"),
                 "title": movie.get("title"),
                 "release_date": digital_release_date or movie.get("release_date"),
+                "primary_release_date": movie.get("release_date"),
                 "overview": movie.get("overview"),
                 "imdb_id": movie.get("imdb_id"),
                 "vote_average": movie.get("vote_average"),

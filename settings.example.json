@@ -12,6 +12,7 @@
   },
   "filters": {
     "min_tmdb_rating": 6.0,
+    "max_release_age_years": 2,
     "exclude_adult": true,
     "allowed_languages": [],
     "excluded_genres": [],
