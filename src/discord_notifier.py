@@ -124,6 +124,48 @@ class DiscordNotifier:
             logger.error(f"Network error sending Discord notification: {str(e)}")
             return False
 
+    def send_update_notification(self, current_version: str, latest_version: str,
+                                  release_url: str, notes: str = "") -> bool:
+        """Send a one-off notification that a new Digitarr version is available."""
+        if not self.is_enabled():
+            return False
+
+        description = (
+            f"A new version of Digitarr is available.\n\n"
+            f"**Running:** {current_version}\n**Latest:** {latest_version}"
+        )
+        if notes:
+            trimmed = notes.strip()
+            if len(trimmed) > 500:
+                trimmed = trimmed[:497] + "..."
+            description += f"\n\n**Release notes:**\n{trimmed}"
+
+        embed = {
+            "title": "⬆️ Digitarr update available",
+            "description": description,
+            "url": release_url,
+            "color": 0x3498DB,  # Blue
+            "footer": {"text": "Digitarr - Digital Movie Release Checker"},
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        payload = {"embeds": [embed]}
+
+        try:
+            response = requests.post(
+                self.webhook_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            if response.status_code in (200, 204):
+                logger.info(f"Sent Discord update notification for version {latest_version}")
+                return True
+            logger.error(f"Discord update notification failed: {response.status_code}")
+            return False
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Network error sending update notification: {str(e)}")
+            return False
+
     def test_webhook(self) -> bool:
         """Test the Discord webhook connection"""
         if not self.is_enabled():

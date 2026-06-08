@@ -4,6 +4,7 @@ Supports: Overseerr, Riven
 """
 
 import logging
+import os
 import time
 from datetime import datetime, timedelta
 
@@ -15,8 +16,13 @@ from overseerr_requester import OverseerrRequester
 from riven_requester import RivenRequester
 from filters import FilterEngine
 from discord_notifier import DiscordNotifier
+from version_checker import VersionChecker
+from version import __version__
 
 logger = logging.getLogger(__name__)
+
+# Persisted in the logs volume so the one-time Discord alert survives restarts.
+UPDATE_STATE_FILE = os.path.join("logs", ".last_notified_version")
 
 
 def setup_logging(config):
@@ -32,6 +38,47 @@ def setup_logging(config):
             logging.StreamHandler()
         ]
     )
+
+
+def _read_last_notified_version():
+    try:
+        with open(UPDATE_STATE_FILE) as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
+def _write_last_notified_version(version):
+    try:
+        os.makedirs(os.path.dirname(UPDATE_STATE_FILE), exist_ok=True)
+        with open(UPDATE_STATE_FILE, "w") as f:
+            f.write(version)
+    except OSError as e:
+        logger.debug(f"Could not persist update-notification state: {e}")
+
+
+def check_for_updates(version_checker, discord_notifier):
+    """Log when a newer version exists (every call) and Discord-notify once.
+
+    The log line is emitted at boot and on every run so it's always visible;
+    the Discord notification fires a single time per new version.
+    """
+    update = version_checker.check()
+    if not update:
+        logger.info(f"Digitarr is up to date (version {__version__})")
+        return
+
+    latest = update["version"]
+    logger.warning(
+        f"A new Digitarr version is available: {latest} "
+        f"(running {__version__}) - {update['url']}"
+    )
+
+    if discord_notifier.is_enabled() and _read_last_notified_version() != latest:
+        if discord_notifier.send_update_notification(
+            __version__, latest, update["url"], update["notes"]
+        ):
+            _write_last_notified_version(latest)
 
 
 def run_check(release_checker, overseerr_requester, riven_requester,
@@ -167,6 +214,12 @@ def main():
         riven_requester = RivenRequester(config) if riven_enabled else None
         filter_engine = FilterEngine(config)
         discord_notifier = DiscordNotifier(config)
+        update_repo = config.get("update_check", {}).get("repo")
+        version_checker = VersionChecker(__version__, update_repo)
+
+        logger.info(f"Digitarr version {__version__}")
+        # Update check at boot (logs every start; Discord-notifies once).
+        check_for_updates(version_checker, discord_notifier)
 
         # Get run settings
         run_time = config.get("run_time", "")  # e.g., "19:00" or empty to run once
@@ -198,6 +251,8 @@ def main():
                 time.sleep(sleep_seconds)
 
                 try:
+                    # Logs the update status on every run; Discord alert stays one-time.
+                    check_for_updates(version_checker, discord_notifier)
                     if request_delay_minutes > 0:
                         logger.info(f"Waiting {request_delay_minutes} minutes before sending requests...")
                         time.sleep(request_delay_minutes * 60)

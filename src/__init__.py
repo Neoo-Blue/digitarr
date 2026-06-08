@@ -2,5 +2,6 @@
 DigiQuest - Daily Digital Release Checker and Overseerr Requester
 """
 
-__version__ = "1.0.0"
+from version import __version__
+
 __author__ = "DigiQuest Contributors"

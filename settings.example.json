@@ -19,6 +19,9 @@
     "excluded_certifications": []
   },
   "release_source": "both",
+  "update_check": {
+    "repo": "Neoo-Blue/digitarr"
+  },
   "run_time": "",
   "request_delay_minutes": 0,
   "logging": {

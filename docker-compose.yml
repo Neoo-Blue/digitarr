@@ -32,6 +32,13 @@ services:
       - RELEASE_SOURCE=both
 
       # =================================================================
+      # Update Check (GitHub repo to watch for new Digitarr releases)
+      # Logs at boot and on every run; sends one Discord alert per new
+      # version if a webhook is configured.
+      # =================================================================
+      - UPDATE_CHECK_REPO=Neoo-Blue/digitarr
+
+      # =================================================================
       # Filter Configuration
       # =================================================================
       - FILTERS_MIN_TMDB_RATING=6.0
