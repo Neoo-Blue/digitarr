@@ -31,6 +31,7 @@ class ConfigManager:
         },
         "filters": {
             "min_tmdb_rating": 0,
+            "max_release_age_years": 2,  # drop catalog re-pickups; 0 disables
             "exclude_adult": True,
             "allowed_languages": [],  # empty means all languages (e.g., ["en", "es"])
             "excluded_genres": [],  # genres to exclude (e.g., ["Horror", "Documentary"])
@@ -153,6 +154,7 @@ class ConfigManager:
             "TMDB_API_KEY": ("tmdb", "api_key"),
             "DISCORD_WEBHOOK_URL": ("discord", "webhook_url"),
             "FILTERS_MIN_TMDB_RATING": ("filters", "min_tmdb_rating", "float"),
+            "FILTERS_MAX_RELEASE_AGE_YEARS": ("filters", "max_release_age_years", "int"),
             "FILTERS_EXCLUDE_ADULT": ("filters", "exclude_adult", "bool"),
             "FILTERS_ALLOWED_LANGUAGES": ("filters", "allowed_languages", "list"),
             "FILTERS_EXCLUDED_GENRES": ("filters", "excluded_genres", "list"),
