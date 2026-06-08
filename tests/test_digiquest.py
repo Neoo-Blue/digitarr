@@ -16,6 +16,7 @@ from release_checker import ReleaseChecker
 from filters import FilterEngine
 from overseerr_requester import OverseerrRequester
 from riven_requester import RivenRequester
+from combined_release_checker import CombinedReleaseChecker, DVDReleaseAdapter
 
 
 class TestConfigManager(unittest.TestCase):
@@ -105,6 +106,64 @@ class TestReleaseChecker(unittest.TestCase):
         releases = checker.get_today_releases()
         self.assertEqual(len(releases), 1)
         self.assertEqual(releases[0]["title"], "Test Movie")
+
+
+class _StubChecker:
+    """Minimal checker exposing get_today_releases for combined-source tests."""
+
+    def __init__(self, releases=None, raises=False):
+        self._releases = releases or []
+        self._raises = raises
+
+    def get_today_releases(self):
+        if self._raises:
+            raise RuntimeError("source down")
+        return self._releases
+
+
+class TestCombinedReleaseChecker(unittest.TestCase):
+    """Test CombinedReleaseChecker merge/dedupe behavior"""
+
+    def test_union_of_two_sources(self):
+        """Titles unique to each source all come through."""
+        tmdb = _StubChecker([{"tmdb_id": 1, "title": "A"}])
+        dvd = _StubChecker([{"tmdb_id": 2, "title": "B"}])
+        combined = CombinedReleaseChecker([("tmdb", tmdb), ("dvd", dvd)])
+
+        result = combined.get_today_releases()
+        titles = sorted(r["title"] for r in result)
+        self.assertEqual(titles, ["A", "B"])
+
+    def test_dedupe_by_tmdb_id_and_fill_missing_fields(self):
+        """Same tmdb_id from both sources collapses to one, merging fields."""
+        tmdb = _StubChecker([{"tmdb_id": 1, "title": "A", "vote_average": 7.0}])
+        dvd = _StubChecker([{"tmdb_id": 1, "title": "A", "imdb_id": "tt1"}])
+        combined = CombinedReleaseChecker([("tmdb", tmdb), ("dvd", dvd)])
+
+        result = combined.get_today_releases()
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["vote_average"], 7.0)
+        self.assertEqual(result[0]["imdb_id"], "tt1")
+        self.assertEqual(result[0]["_sources"], ["tmdb", "dvd"])
+
+    def test_one_source_failing_does_not_break_the_other(self):
+        """If a source raises, the run continues with the surviving source."""
+        tmdb = _StubChecker(raises=True)
+        dvd = _StubChecker([{"tmdb_id": 2, "title": "B"}])
+        combined = CombinedReleaseChecker([("tmdb", tmdb), ("dvd", dvd)])
+
+        result = combined.get_today_releases()
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["title"], "B")
+
+    def test_dvd_adapter_maps_method(self):
+        """DVDReleaseAdapter exposes get_today_releases over the DVD checker."""
+        class _DVD:
+            def get_todays_digital_releases(self):
+                return [{"tmdb_id": 9, "title": "Z"}]
+
+        adapter = DVDReleaseAdapter(_DVD())
+        self.assertEqual(adapter.get_today_releases()[0]["title"], "Z")
 
 
 class TestFilterEngine(unittest.TestCase):

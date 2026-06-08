@@ -25,10 +25,11 @@ services:
 
       # =================================================================
       # Release Source Configuration
-      # Options: "tmdb" or "dvdsreleasedates"
-      # dvdsreleasedates.com may have more accurate digital release dates
+      # Options: "tmdb", "dvdsreleasedates", or "both"
+      # "both" queries TMDB and dvdsreleasedates.com and merges/dedupes the
+      # results so you catch releases either source lists on its own.
       # =================================================================
-      - RELEASE_SOURCE=tmdb
+      - RELEASE_SOURCE=both
 
       # =================================================================
       # Filter Configuration
