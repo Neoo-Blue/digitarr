@@ -18,6 +18,7 @@
     "excluded_genres": [],
     "excluded_certifications": []
   },
+  "release_source": "both",
   "run_time": "",
   "request_delay_minutes": 0,
   "logging": {

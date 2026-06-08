@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from config_manager import ConfigManager
 from release_checker import ReleaseChecker
 from dvd_release_checker import DVDReleaseChecker
+from combined_release_checker import CombinedReleaseChecker, DVDReleaseAdapter
 from overseerr_requester import OverseerrRequester
 from riven_requester import RivenRequester
 from filters import FilterEngine
@@ -143,20 +144,20 @@ def main():
         if not config.get("tmdb", {}).get("api_key"):
             raise ValueError("TMDB API key is required")
 
-        # Initialize release checker based on source
+        # Initialize release checker based on source.
+        # "both"/"all" runs TMDB and dvdsreleasedates.com together and merges them.
         release_source = config.get("release_source", "tmdb").lower()
         tmdb_api_key = config.get("tmdb", {}).get("api_key")
 
-        if release_source == "dvdsreleasedates":
+        if release_source in ("both", "all", "tmdb+dvdsreleasedates"):
+            logger.info("Using BOTH TMDB and dvdsreleasedates.com as release sources")
+            release_checker = CombinedReleaseChecker([
+                ("tmdb", ReleaseChecker(config)),
+                ("dvdsreleasedates", DVDReleaseAdapter(DVDReleaseChecker(tmdb_api_key))),
+            ])
+        elif release_source == "dvdsreleasedates":
             logger.info("Using dvdsreleasedates.com as release source")
-            dvd_checker = DVDReleaseChecker(tmdb_api_key)
-            # Wrap in a simple adapter that matches the ReleaseChecker interface
-            class DVDReleaseAdapter:
-                def __init__(self, checker):
-                    self.checker = checker
-                def get_today_releases(self):
-                    return self.checker.get_todays_digital_releases()
-            release_checker = DVDReleaseAdapter(dvd_checker)
+            release_checker = DVDReleaseAdapter(DVDReleaseChecker(tmdb_api_key))
         else:
             logger.info("Using TMDB as release source")
             release_checker = ReleaseChecker(config)
