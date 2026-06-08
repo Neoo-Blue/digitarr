@@ -34,6 +34,9 @@ services:
       # Filter Configuration
       # =================================================================
       - FILTERS_MIN_TMDB_RATING=6.0
+      # Drop catalog re-pickups whose primary release is older than this many years.
+      # Set to 0 to disable. Default 2.
+      - FILTERS_MAX_RELEASE_AGE_YEARS=2
       - FILTERS_EXCLUDE_ADULT=true
       # Comma-separated language codes (e.g., "en,es,fr"). Empty = all languages
       - FILTERS_ALLOWED_LANGUAGES=en

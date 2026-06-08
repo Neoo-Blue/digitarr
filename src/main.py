@@ -52,6 +52,7 @@ def run_check(release_checker, overseerr_requester, riven_requester,
 
     # Request through Overseerr
     overseerr_successful = 0
+    overseerr_skipped = 0
     overseerr_failed = 0
 
     if overseerr_requester and filtered_releases:
@@ -63,13 +64,17 @@ def run_check(release_checker, overseerr_requester, riven_requester,
 
             try:
                 result = overseerr_requester.request_media(release)
-                if result:
+                title = release.get("title", "Unknown")
+                if result == "requested":
                     overseerr_successful += 1
                     release_results[tmdb_id]["overseerr"] = True
-                    logger.info(f"Overseerr: Successfully requested {release.get('title', 'Unknown')}")
+                    logger.info(f"Overseerr: Successfully requested {title}")
+                elif result == "skipped":
+                    overseerr_skipped += 1
+                    logger.info(f"Overseerr: Skipped {title} (already on Overseerr)")
                 else:
                     overseerr_failed += 1
-                    logger.warning(f"Overseerr: Failed to request {release.get('title', 'Unknown')}")
+                    logger.warning(f"Overseerr: Failed to request {title}")
 
             except Exception as e:
                 overseerr_failed += 1
@@ -96,7 +101,10 @@ def run_check(release_checker, overseerr_requester, riven_requester,
         logger.info(f"Riven: Added {riven_success_count} items, {riven_failed_count} failed")
 
     # Log summary
-    logger.info(f"Overseerr summary - Successful: {overseerr_successful}, Failed: {overseerr_failed}")
+    logger.info(
+        f"Overseerr summary - Successful: {overseerr_successful}, "
+        f"Skipped: {overseerr_skipped}, Failed: {overseerr_failed}"
+    )
     logger.info(f"Riven summary - Successful: {riven_success_count}, Failed: {riven_failed_count}")
 
     # Send individual Discord notifications for each successful release
