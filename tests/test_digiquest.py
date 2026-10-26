@@ -99,6 +99,24 @@ class TestReleaseChecker(unittest.TestCase):
         self.assertEqual(movies[0]["title"], "Test Movie")
         self.assertEqual(movies[0]["type"], "movie")
     
+    @patch('release_checker.requests.get')
+    def test_lookback_window_and_paging(self, mock_get):
+        """lookback_days widens the discover date range and later pages are fetched."""
+        from datetime import date, timedelta
+        page = MagicMock()
+        page.json.return_value = {"results": [{"id": 1}], "total_pages": 5}
+        mock_get.return_value = page
+
+        checker = ReleaseChecker({"tmdb": {"api_key": "k"}, "lookback_days": 14})
+        with patch.object(checker, '_get_movie_with_release_dates', return_value={"tmdb_id": 1}):
+            releases = checker.get_today_releases()
+
+        params = mock_get.call_args_list[0].kwargs["params"]
+        self.assertEqual(params["release_date.gte"], (date.today() - timedelta(days=14)).isoformat())
+        self.assertEqual(params["release_date.lte"], date.today().isoformat())
+        self.assertEqual([c.kwargs["params"]["page"] for c in mock_get.call_args_list], [1, 2, 3])
+        self.assertEqual(len(releases), 3)
+
     @patch('release_checker.ReleaseChecker._fetch_digital_releases')
     def test_get_today_releases(self, mock_fetch):
         """Test getting today's releases"""
@@ -286,6 +304,18 @@ class TestFilterEngine(unittest.TestCase):
         
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0]["title"], "Good Movie")
+
+    def test_vote_count_and_popularity_filters(self):
+        """A high rating from a handful of votes, or a title nobody watches, is dropped."""
+        config = {"filters": {"min_tmdb_rating": 6.5, "min_vote_count": 150, "min_popularity": 10}}
+        releases = [
+            {"title": "Hit", "vote_average": 7.5, "vote_count": 900, "popularity": 120.0},
+            {"title": "Obscure 10/10", "vote_average": 10.0, "vote_count": 1, "popularity": 3.3},
+            {"title": "Known but forgotten", "vote_average": 6.9, "vote_count": 248, "popularity": 5.0},
+            {"title": "No vote data", "vote_average": 8.0},
+        ]
+        filtered = FilterEngine(config).apply_filters(releases)
+        self.assertEqual([r["title"] for r in filtered], ["Hit"])
 
 
 class TestOverseerrRequester(unittest.TestCase):

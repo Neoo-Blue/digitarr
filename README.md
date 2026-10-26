@@ -8,7 +8,7 @@ A dockerized tool that checks for **daily digital movie releases** and automatic
 - 📡 **Multiple Release Sources**: Use TMDB or dvdsreleasedates.com for release dates
 - 🎯 **Multi-Service Support**: Request through Overseerr and/or Riven simultaneously
 - 🔔 **Discord Notifications**: Get notified for each movie added with poster and rating
-- 🎥 **Smart Filtering**: Filter by TMDB rating, language, genre, MPAA rating, and adult content
+- 🎥 **Smart Filtering**: Only hits by default (TMDB rating backed by vote count and popularity), plus language, genre, MPAA rating, and adult content
 - 🐳 **Docker Native**: Complete Docker and Docker Compose setup
 - ⚙️ **Fully Configurable**: JSON-based settings + complete environment variable support
 - 📅 **Daily Scheduling**: Run at a specific time daily with optional request delay
@@ -54,7 +54,8 @@ Configure via environment variables (Docker) or `settings.json`.
 | RIVEN_API_URL | Riven URL | `http://riven:8080` |
 | RIVEN_API_KEY | Riven API key | `your_riven_key` |
 | DISCORD_WEBHOOK_URL | Discord webhook for notifications | `https://discord.com/api/webhooks/...` |
-| RELEASE_SOURCE | Where to get release dates: `tmdb` or `dvdsreleasedates` | `tmdb` |
+| RELEASE_SOURCE | Where to get release dates: `tmdb`, `dvdsreleasedates` or `both` | `tmdb` |
+| LOOKBACK_DAYS | Also re-check TMDB digital releases from the last N days, so titles that gain votes after release day still get requested (0 = today only) | `14` |
 | RUN_TIME | Time to run daily (24h format) | `19:00` |
 | REQUEST_DELAY_MINUTES | Minutes to wait before requests | `0` |
 
@@ -69,7 +70,10 @@ Configure via environment variables (Docker) or `settings.json`.
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| FILTERS_MIN_TMDB_RATING | Minimum TMDB rating (0-10) | `6.0` |
+| FILTERS_MIN_TMDB_RATING | Minimum TMDB rating (0-10) | `6.5` |
+| FILTERS_MIN_VOTE_COUNT | Minimum TMDB votes behind the rating, so an 8.0 from 5 votes doesn't count (0 = off) | `150` |
+| FILTERS_MIN_POPULARITY | Minimum TMDB popularity score (0 = off) | `10` |
+| FILTERS_MAX_RELEASE_AGE_YEARS | Skip catalog titles whose original release is older than this (0 = off) | `2` |
 | FILTERS_EXCLUDE_ADULT | Exclude adult content | `true` |
 | FILTERS_ALLOWED_LANGUAGES | Comma-separated language codes (see list below) | `en,es,fr` |
 | FILTERS_EXCLUDED_GENRES | Comma-separated genres to exclude (see list below) | `Horror,Documentary` |

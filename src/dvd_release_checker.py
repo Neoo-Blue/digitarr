@@ -162,6 +162,8 @@ class DVDReleaseChecker:
                 'title': movie.get('title', title),
                 'overview': movie.get('overview', ''),
                 'vote_average': movie.get('vote_average', 0),
+                'vote_count': movie.get('vote_count', 0),
+                'popularity': movie.get('popularity', 0),
                 'poster_path': movie.get('poster_path'),
                 'release_date': movie.get('release_date', ''),
                 'original_language': movie.get('original_language', ''),

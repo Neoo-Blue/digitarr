@@ -4,10 +4,12 @@ Release Checker - Checks for digital movie releases using TMDB
 
 import logging
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
+
+MAX_PAGES = 3  # 20 results per page
 
 # TMDB Release Types
 RELEASE_TYPE_PREMIERE = 1
@@ -29,8 +31,15 @@ class ReleaseChecker:
         self.today = datetime.now().date()
 
     def get_today_releases(self) -> List[Dict[str, Any]]:
-        """Get digital movie releases for today"""
+        """Get digital movie releases for today, plus the last lookback_days.
+
+        A streaming premiere has almost no TMDB votes on release day, so the
+        vote-count filter would never let it through. Re-checking a trailing
+        window requests it once enough votes are in; requesters skip titles
+        already requested.
+        """
         self.today = datetime.now().date()
+        start = self.today - timedelta(days=self.config.get("lookback_days", 0))
         releases = []
 
         if not self.tmdb_api_key:
@@ -38,16 +47,16 @@ class ReleaseChecker:
             return releases
 
         try:
-            # Get movies with digital releases today
-            releases = self._fetch_digital_releases(self.today)
+            releases = self._fetch_digital_releases(self.today, start)
         except Exception as e:
             logger.error(f"Error fetching releases: {str(e)}")
 
-        logger.info(f"Found {len(releases)} digital movie releases for {self.today}")
+        logger.info(f"Found {len(releases)} digital movie releases for {start} to {self.today}")
         return releases
 
-    def _fetch_digital_releases(self, target_date: datetime.date) -> List[Dict[str, Any]]:
-        """Fetch movies with digital releases on target date"""
+    def _fetch_digital_releases(self, target_date: datetime.date,
+                                start_date: datetime.date = None) -> List[Dict[str, Any]]:
+        """Fetch movies with digital releases between start_date and target_date"""
         movies = []
 
         try:
@@ -57,18 +66,24 @@ class ReleaseChecker:
             params = {
                 "api_key": self.tmdb_api_key,
                 "with_release_type": RELEASE_TYPE_DIGITAL,
-                "release_date.gte": target_date.isoformat(),
+                "release_date.gte": (start_date or target_date).isoformat(),
                 "release_date.lte": target_date.isoformat(),
                 "sort_by": "popularity.desc",
-                "page": 1
             }
 
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            data = response.json()
+            # Sorted by popularity, so the first few pages hold every plausible hit.
+            results = []
+            page, total_pages = 1, 1
+            while page <= min(total_pages, MAX_PAGES):
+                response = requests.get(url, params={**params, "page": page}, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                results.extend(data.get("results", []))
+                total_pages = data.get("total_pages", 1)
+                page += 1
 
             # Get detailed info for each movie including release dates
-            for movie in data.get("results", []):
+            for movie in results:
                 movie_id = movie.get("id")
                 movie_details = self._get_movie_with_release_dates(movie_id)
 
@@ -110,6 +125,7 @@ class ReleaseChecker:
                 "overview": movie.get("overview"),
                 "imdb_id": movie.get("imdb_id"),
                 "vote_average": movie.get("vote_average"),
+                "vote_count": movie.get("vote_count"),
                 "popularity": movie.get("popularity"),
                 "adult": movie.get("adult", False),
                 "poster_path": movie.get("poster_path"),

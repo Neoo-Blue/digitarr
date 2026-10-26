@@ -41,7 +41,14 @@ services:
       # =================================================================
       # Filter Configuration
       # =================================================================
-      - FILTERS_MIN_TMDB_RATING=6.0
+      - FILTERS_MIN_TMDB_RATING=6.5
+      # Only hits: the rating must be backed by enough TMDB votes, and the
+      # title must be getting attention. 0 disables either one.
+      - FILTERS_MIN_VOTE_COUNT=150
+      - FILTERS_MIN_POPULARITY=10
+      # Re-check the last N days of releases each run, so a streaming premiere
+      # (near zero votes on release day) gets requested once its votes come in.
+      - LOOKBACK_DAYS=14
       # Drop catalog re-pickups whose primary release is older than this many years.
       # Set to 0 to disable. Default 2.
       - FILTERS_MAX_RELEASE_AGE_YEARS=2
