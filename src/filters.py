@@ -38,6 +38,15 @@ class FilterEngine:
             filtered = self._filter_by_tmdb_rating(filtered)
             logger.info(f"After TMDB rating filter: {len(filtered)} releases")
 
+        # A rating means nothing without enough votes behind it: obscure titles
+        # sit at 8-10 off a handful of votes. Vote count + popularity = "a hit".
+        for field, key, label in (("vote_count", "min_vote_count", "vote count"),
+                                  ("popularity", "min_popularity", "popularity")):
+            minimum = self.filters.get(key, 0)
+            if minimum > 0:
+                filtered = self._filter_by_minimum(filtered, field, minimum)
+                logger.info(f"After {label} filter: {len(filtered)} releases")
+
         # Filter by allowed languages (only include these languages)
         allowed_langs = self.filters.get("allowed_languages", [])
         if allowed_langs:
@@ -109,6 +118,18 @@ class FilterEngine:
             else:
                 logger.debug(f"Skipping {release.get('title')} - TMDB rating {vote_average} < {min_rating}")
 
+        return filtered
+
+    def _filter_by_minimum(self, releases: List[Dict[str, Any]], field: str,
+                           minimum: float) -> List[Dict[str, Any]]:
+        """Keep releases whose numeric field is at least minimum (missing counts as 0)"""
+        filtered = []
+        for release in releases:
+            value = release.get(field) or 0
+            if value >= minimum:
+                filtered.append(release)
+            else:
+                logger.info(f"Skipping {release.get('title')} - {field} {value} < {minimum}")
         return filtered
 
     def _filter_by_allowed_languages(self, releases: List[Dict[str, Any]],

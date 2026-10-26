@@ -31,6 +31,8 @@ class ConfigManager:
         },
         "filters": {
             "min_tmdb_rating": 0,
+            "min_vote_count": 150,  # TMDB votes behind the rating; 0 disables
+            "min_popularity": 10,  # TMDB popularity score; 0 disables
             "max_release_age_years": 2,  # drop catalog re-pickups; 0 disables
             "exclude_adult": True,
             "allowed_languages": [],  # empty means all languages (e.g., ["en", "es"])
@@ -38,6 +40,7 @@ class ConfigManager:
             "excluded_certifications": []  # age ratings to exclude (e.g., ["R", "NC-17"])
         },
         "release_source": "tmdb",  # "tmdb", "dvdsreleasedates", or "both"
+        "lookback_days": 14,  # also re-check releases from the last N days (TMDB source)
         "update_check": {
             "repo": "Neoo-Blue/digitarr"  # GitHub repo to check for new releases
         },
@@ -157,6 +160,8 @@ class ConfigManager:
             "TMDB_API_KEY": ("tmdb", "api_key"),
             "DISCORD_WEBHOOK_URL": ("discord", "webhook_url"),
             "FILTERS_MIN_TMDB_RATING": ("filters", "min_tmdb_rating", "float"),
+            "FILTERS_MIN_VOTE_COUNT": ("filters", "min_vote_count", "int"),
+            "FILTERS_MIN_POPULARITY": ("filters", "min_popularity", "float"),
             "FILTERS_MAX_RELEASE_AGE_YEARS": ("filters", "max_release_age_years", "int"),
             "FILTERS_EXCLUDE_ADULT": ("filters", "exclude_adult", "bool"),
             "FILTERS_ALLOWED_LANGUAGES": ("filters", "allowed_languages", "list"),
@@ -169,6 +174,7 @@ class ConfigManager:
         # Top-level config mappings (key, type)
         top_level_map = {
             "RELEASE_SOURCE": ("release_source", "str"),
+            "LOOKBACK_DAYS": ("lookback_days", "int"),
             "RUN_TIME": ("run_time", "str"),
             "REQUEST_DELAY_MINUTES": ("request_delay_minutes", "int"),
         }

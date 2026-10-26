@@ -11,7 +11,9 @@
     "api_key": ""
   },
   "filters": {
-    "min_tmdb_rating": 6.0,
+    "min_tmdb_rating": 6.5,
+    "min_vote_count": 150,
+    "min_popularity": 10,
     "max_release_age_years": 2,
     "exclude_adult": true,
     "allowed_languages": [],
@@ -19,6 +21,7 @@
     "excluded_certifications": []
   },
   "release_source": "both",
+  "lookback_days": 14,
   "update_check": {
     "repo": "Neoo-Blue/digitarr"
   },
